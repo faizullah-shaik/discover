@@ -42,6 +42,7 @@ void TraCIDemo11p::initialize(int stage) {
 		isParking = false;
 		sendWhileParking = par("sendWhileParking").boolValue();
 	}
+	//DBG<< "I AM IN THE INITIALIZE MODULE!!!" <<endl;
 }
 
 void TraCIDemo11p::onBeacon(WaveShortMessage* wsm) {

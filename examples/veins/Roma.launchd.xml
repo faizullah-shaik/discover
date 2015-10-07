@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<!-- debug config -->
+<launch>
+	<copy file="Roma.net.xml" />
+	<copy file="Roma.rou.xml" />
+        <copy file="Roma.poly.xml" />
+	<copy file="Roma.sumo.cfg" type="config" />
+</launch>
+

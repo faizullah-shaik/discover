@@ -1,0 +1,21 @@
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.sf.net/xsd/routes_file.xsd">
+ 
+<vTypeDistribution id="privati">
+
+  	<vType id="tranquillo" accel="0.8" decel="4.5" sigma="0.5" length="5" minGap="2" maxSpeed="60" speedFactor="1" speedDev="0.1" probability="0.6"/>
+
+  	<vType id="matto" accel="1" decel="5" sigma="0.7" length="3.5" minGap="2" maxSpeed="60" speedFactor="1" speedDev="0.1" color="1,0,0" probability="0.3"/>
+
+  	<vType id="tir" accel="0.7" decel="4.3" sigma="0.5" length="12" minGap="2" maxSpeed="45" speedFactor="0.75" speedDev="0.1" color="0,0,1" vClass="hov" probability="0.1" guiShape="transport" />
+
+</vTypeDistribution>
+
+
+   <route id="left-right" edges="sotto1"/>
+   <route id="right-left" edges="sopra1"/>
+
+   <flow id="left-right" type="privati" route="left-right" begin="0" end="400" period="2.8" departSpeed="max" departLane="allowed"/>
+   <flow id="right-left" type="privati" route="right-left" begin="0" end="400" period="2.8" departSpeed="max" departLane="allowed"/>
+
+   
+</routes>
