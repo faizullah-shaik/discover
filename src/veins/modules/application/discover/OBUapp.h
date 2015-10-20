@@ -54,9 +54,9 @@ class OBUapp : public BaseWaveApplLayer {
 
 	protected:
         //TraCIMobility* traci;
-        TraCIMobility* mobility;
-        TraCICommandInterface* traci;
-        TraCICommandInterface::Vehicle* traciVehicle;
+	    TraCIMobility* mobility;
+	    TraCICommandInterface* traci;
+	    TraCICommandInterface::Vehicle* traciVehicle;
         //Mac1609_4* MAC;           // pointer to Mac1609_4 submodule
         simtime_t lastDroveAt;
         simsignal_t txDist;
@@ -166,12 +166,31 @@ class OBUapp : public BaseWaveApplLayer {
 	            };
 	    /*\Ion*/
 
+	    /*Ion: a data structure to describe a road segment*/
+	    class RoadSegment {
+	           public:
+	                int         roadID;
+	                double      roadPosX;
+	                double      roadPosY;
+	                double      roadWeight;
+
+	           public:
+	                // initialize list
+	                RoadSegment(int n=-1, double x=-1.0, double y=-1.0, double w=-1) :
+	                     roadID(n), roadPosX(x), roadPosY(y), roadWeight(w) {
+	                }
+	           };
+	    /*\Ion*/
+
 
 	    typedef std::list<Bcast> cBroadcastList;
 
 	    /*Ion: typedef and struct*/
 	    typedef std::list<Beacons> cBeaconsList;
 	    typedef std::pair<Beacons,double> myPair;
+	    typedef std::list<RoadSegment> roadSegmentList;
+	    typedef std::pair<Beacons,double> vehRoadPair;
+	    typedef std::pair<Beacons,int> vehCounterPair;
 
 	    struct sortVector
         {
@@ -182,6 +201,8 @@ class OBUapp : public BaseWaveApplLayer {
         };
 
 	    cBeaconsList beaconMsgs;
+	    roadSegmentList roadSegments;
+	    //vehRoadPair rnPair;
 	    /*\Ion*/
 
         cBroadcastList bcMsgs;
@@ -213,6 +234,9 @@ class OBUapp : public BaseWaveApplLayer {
         void saveRXPacket(int node, WsmExt* ext);
         void mergeNeighbors(int node, WsmExt* ext);
         int getDefaultDistance();
+        void readListFromFile();
+        double getRoadSegWeight(Beacons veh);
+        void sortListByDistance(cBeaconsList& beaconsList, Beacons sender);
         int getDefaultTTL();
         /*\Ion*/
 

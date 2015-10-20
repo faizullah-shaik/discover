@@ -24,13 +24,13 @@ Define_Module(OBUapp);
 void OBUapp::initialize(int stage) {
 	BaseWaveApplLayer::initialize(stage);
 	if (stage == 0) {
-		//traci               = TraCIMobilityAccess().get(getParentModule());
-		mobility = Veins::TraCIMobilityAccess().get(getParentModule());
-		traci = mobility->getCommandInterface();
-		traciVehicle = mobility->getVehicleCommandInterface();
-		//MAC                 = this->getParentModule()->getSubmodule("nic")->getSubmodule("mac1609_4");
-		//debugEV << "MAC: " << Mac1609_4->getActiveChannel() <<endl;
-		lastDroveAt         = simTime();
+	    //traci               = TraCIMobilityAccess().get(getParentModule());
+	    mobility = Veins::TraCIMobilityAccess().get(getParentModule());
+	    traci = mobility->getCommandInterface();
+	    traciVehicle = mobility->getVehicleCommandInterface();
+	    //MAC                 = this->getParentModule()->getSubmodule("nic")->getSubmodule("mac1609_4");
+	    //debugEV << "MAC: " << Mac1609_4->getActiveChannel() <<endl;
+	    lastDroveAt         = simTime();
 	    R                   = 830;                // for 500mW transmission power, 6Mbps and 2rayInterference
 	    TmaxType            = 0; //par("TmaxType");
         TmaxOriginale       = (par("Tmax").doubleValue())/1000;
@@ -63,6 +63,8 @@ void OBUapp::initialize(int stage) {
       //  disabilitaNearBorder = 0;
 
         /*Ion: variables initialization*/
+        sim_name = ev.getConfigEx()->getActiveConfigName();
+        path = "/home/ion/Desktop/DISCOVER_Results/";
         BIDIRECTION = true;
         MULTIHOP_BEACON = false;
         RANDOM = false;
@@ -72,14 +74,15 @@ void OBUapp::initialize(int stage) {
    //     timeToReply = 0;
    //     currentHopCount = 0;
         defaultTimer = 30;
-        delayTimerType1 = 0.005; //0.002 for BIDIRECTION=true; 0.005 for BIDIRECTION=false
+        delayTimerType1 = 0.002; //0.002 for BIDIRECTION=true; 0.005 for BIDIRECTION=false
         delayTimerType2 = 0.1;
         defaultDistance = getDefaultDistance();
         debugEV<< "Default Distance = " << defaultDistance <<endl;
         leader = false;
         alreadyParticipated = false;
         readyToSave = true;
-        startBeacon = 100;
+        //startBeacon = getDefaultDistance();
+        startBeacon = 300;
   //      senderX = 1520;
   //      senderY = 2970;
         tempMax = 1.0;
@@ -87,14 +90,24 @@ void OBUapp::initialize(int stage) {
         PktSizeLimit = 1400;
         TTL = getDefaultTTL();
         set<string> setOfBeacons;
+        //readListFromFile(); // reads from file and initializes the list of road segments
+        /*debugEV<< "RoadSegment List Size = " << roadSegments.size() <<endl;
+        roadSegmentList::iterator it;
+        for (it = roadSegments.begin(); it != roadSegments.end(); it++) {
+            debugEV<< "id = " << it->roadID <<endl;
+            debugEV<< "x = " << it->roadPosX <<endl;
+            debugEV<< "y = " << it->roadPosY <<endl;
+            debugEV<< "weight = " << it->roadWeight <<endl;
+        }*/
 
-        sim_name = ev.getConfigEx()->getActiveConfigName();
-        if (sim_name=="Managrid") path="/home/pierpaolo/Scrivania/Ion_Results/";
-        if (sim_name=="Newyork1") path="/home/ion/Desktop/";
-        if (sim_name=="Newyork2") path="/media/HD2/Ion_Backup/DISCOVER_DOWNLOAD/Newyork/Newyork2/StartBeacon300/";
-        if (sim_name=="Newyork3") path="/media/HD2/Ion_Backup/DISCOVER_DOWNLOAD/Newyork/Newyork3/StartBeacon300/";
-        if (sim_name=="Newyork4") path="/media/HD2/Ion_Backup/DISCOVER_DOWNLOAD/Newyork/Newyork4/StartBeacon300/";
-        if (sim_name=="Newyork5") path="/media/HD2/Ion_Backup/DISCOVER_DOWNLOAD/Newyork/Newyork5/StartBeacon300/";
+        //sim_name = ev.getConfigEx()->getActiveConfigName();
+        /*if (sim_name=="Managrid") path="/home/pierpaolo/Scrivania/Ion_Results/";
+
+        if (sim_name=="Newyork1") path="/media/HD2/Ion_Backup/DISCOVER_ROAD_HISTORY/Newyork/Newyork1/WNSTD/StartBeacon300/";
+        if (sim_name=="Newyork2") path="/media/HD2/Ion_Backup/DISCOVER_ROAD_HISTORY/Newyork/Newyork2/WNSTD/StartBeacon300/";
+        if (sim_name=="Newyork3") path="/media/HD2/Ion_Backup/DISCOVER_ROAD_HISTORY/Newyork/Newyork3/WNSTD/StartBeacon300/";
+        if (sim_name=="Newyork4") path="/media/HD2/Ion_Backup/DISCOVER_ROAD_HISTORY/Newyork/Newyork4/WNSTD/StartBeacon300/";
+        if (sim_name=="Newyork5") path="/media/HD2/Ion_Backup/DISCOVER_ROAD_HISTORY/Newyork/Newyork5/WNSTD/StartBeacon300/";*/
 
      /*   if (sim_name=="Roma1") path="/media/HD2/Ion_Backup/FLOODING/Roma/Roma1/StartBeacon300/";
         if (sim_name=="Roma2") path="/media/HD2/Ion_Backup/FLOODING/Roma/Roma2/StartBeacon300/";
@@ -120,22 +133,22 @@ void OBUapp::initialize(int stage) {
         /*\Ion*/
 
         // set a timer to trigger the writing on the file
-        simtime_t mySaveTimer = startBeacon + defaultTimer;
+       /* simtime_t mySaveTimer = startBeacon + defaultTimer - 0.5;
         if ( mySaveTimer > simTime()) {
             std::stringstream s;
             s << "SaveMess_" << myId;
             std::string name(s.str());
             saveMsg = new cMessage(name.c_str(), SAVE_MESSAGE);
             scheduleAt(mySaveTimer, saveMsg);
-        }
+        }*/
 
         /*Ion: clean the output directory*/
-        /*if (myId==0){
-            system("exec rm -r /home/pierpaolo/Scrivania/Ion_Results/leaders/*");
-            system("exec rm -r /home/pierpaolo/Scrivania/Ion_Results/neighbors/*");
-            system("exec rm -r /home/pierpaolo/Scrivania/Ion_Results/request/*");
-            system("exec rm -r /home/pierpaolo/Scrivania/Ion_Results/TXPackets/*");
-            system("exec rm -r /home/pierpaolo/Scrivania/Ion_Results/RXPackets/*");
+        if (myId==0){
+            system("exec rm -r /home/ion/Desktop/DISCOVER_Results/leaders/*");
+            system("exec rm -r /home/ion/Desktop/DISCOVER_Results/neighbors/*");
+            system("exec rm -r /home/ion/Desktop/DISCOVER_Results/request/*");
+            system("exec rm -r /home/ion/Desktop/DISCOVER_Results/TXPackets/*");
+            system("exec rm -r /home/ion/Desktop/DISCOVER_Results/RXPackets/*");
         }
         /*\Ion*/
 	}
@@ -174,9 +187,9 @@ void OBUapp::onData(WaveShortMessage* wsm) { //TODO
                     debugEV << "RECEIVED NODE'S " << ext->getSenderAddress() << " BEACON WHITH POSITION " << ext->getSenderPos().x
                             << "|" << ext->getSenderPos().y << " AND SENDING TIME " << ext->getTimestamp() <<endl;
 
-                    //saveNeighborToList(myId, ext);
+                    saveNeighborToList(myId, ext);
 
-                    ostringstream ss1;
+                    /*ostringstream ss1;
                     ss1 << ext->getSenderAddress();
                     string sender = ss1.str();
 
@@ -201,7 +214,7 @@ void OBUapp::onData(WaveShortMessage* wsm) { //TODO
                     string hopcount = ss6.str();
 
                     string elem = sender + "   " + posX + "   " + posY + "   " + hopcount + "   " + simtime + "   " + endtime;
-                    setOfBeacons.insert(elem);
+                    setOfBeacons.insert(elem);*/
 
                     if (!Received(ext)){
                         if ( ext->getTtl() > 1 ) {
@@ -603,8 +616,8 @@ void OBUapp::handleSelfMsg(cMessage* msg){
                         string elem = sender + "   " + endtime + "   " + seqNum;
                         setOfTXPackets.insert(elem);*/
 
-                        debugEV<< "The packet length at the app layer is " << loaded_ext->getWsmLength() <<endl;
-                        debugEV<< "The data contained in the packet is " << loaded_ext->getWsmData() <<endl;
+                        //debugEV<< "The packet length at the app layer is " << loaded_ext->getWsmLength() <<endl;
+                        //debugEV<< "The data contained in the packet is " << loaded_ext->getWsmData() <<endl;
                         setForwardedFlag(loaded_ext->getSeqNum());
 
                         if (simTime() >= simulation.getWarmupPeriod()){// && (!nearBorder(1, borderX, borderY, disabilitaNearBorder)) ){
@@ -794,8 +807,8 @@ void OBUapp::handleSelfMsg(cMessage* msg){
             beacon_to_send->setHopCount(0);
             beacon_to_send->setWsmLength(14);
             sendDown(beacon_to_send);
-            debugEV<< "The packet length at the app layer is " << beacon_to_send->getWsmLength() <<endl;
-            debugEV<< "The data contained in the packet is " << beacon_to_send->getWsmData() <<endl;
+            //debugEV<< "The packet length at the app layer is " << beacon_to_send->getWsmLength() <<endl;
+            //debugEV<< "The data contained in the packet is " << beacon_to_send->getWsmData() <<endl;
             saveTXPacket(myId, beacon_to_send);
         /*    ostringstream ss1;
             ss1 << beacon_to_send->getSenderAddress();
@@ -819,15 +832,15 @@ void OBUapp::handleSelfMsg(cMessage* msg){
             debugEV<< "BEACON MESSAGE BROADCASTED " << curPosition.x << "|" << curPosition.y <<endl;
 
             /*the module bellow is needed to set a fixed periodical beacon exchange... uncomment if necessary*/
-      /*      simtime_t myBeaconTimer = msg->getArrivalTime() + defaultTimer;
+            /*simtime_t myBeaconTimer = msg->getArrivalTime() + defaultTimer;
             if ( myBeaconTimer > simTime()) {
                 std::stringstream ss;
                 ss << "BeaconMess_" << myId;
                 std::string name(ss.str());
                 beaconMsg = new cMessage(name.c_str(), BEACON_MESSAGE );
                 scheduleAt(myBeaconTimer, beaconMsg);
-            }
-            debugEV<< "BEACON SELF MESSAGE SCHEDULED TO SEND AFTER TIMER EXPIRES" <<endl;
+            }*/
+            /*debugEV<< "BEACON SELF MESSAGE SCHEDULED TO SEND AFTER TIMER EXPIRES" <<endl;
             debugEV<< "Beacons list size before updating = " << beaconMsgs.size() <<endl;
             debugEV<< "UPDATING THE BEACONS LIST" <<endl;
             updateBeaconsList(beaconMsgs, simTime());
@@ -838,6 +851,52 @@ void OBUapp::handleSelfMsg(cMessage* msg){
 
 
         case SAVE_MESSAGE: {
+
+           /* ofstream myfile;
+            string path = this->path;
+            ostringstream ss;
+            ss << floor (simTime()) - 1;
+            string filename = ss.str();
+            myfile.open((path+filename).c_str(), ios::app);
+
+            ostringstream ss1;
+            ss1 << traci->getExternalId();
+            string id = ss1.str();
+
+            ostringstream ss2;
+            ss2 << curPosition.x;
+            string x = ss2.str();
+
+            ostringstream ss3;
+            ss3 << curPosition.y;
+            string y = ss3.str();
+
+            string size = "";
+            if (!beaconMsgs.empty()){
+                ostringstream ss4;
+                ss4 << beaconMsgs.size()-1;
+                size = ss4.str();
+            }
+            else{
+                ostringstream ss4;
+                ss4 << 0;
+                size = ss4.str();
+            }
+
+
+            myfile << id + " " + x + " " + y + " " + size + "\n";
+            myfile.close();*/
+
+            // set a timer to trigger the writing on the file
+            /*simtime_t mySaveTimer = simTime() + defaultTimer;
+            if ( mySaveTimer > simTime()) {
+                std::stringstream s;
+                s << "SaveMess_" << myId;
+                std::string name(s.str());
+                saveMsg = new cMessage(name.c_str(), SAVE_MESSAGE);
+                scheduleAt(mySaveTimer, saveMsg);
+            }*/
+
             if (!setOfBeacons.empty()){
                 ofstream myfile;
                 string path = this->path+"neighbors/";
@@ -873,6 +932,8 @@ void OBUapp::handleSelfMsg(cMessage* msg){
             else{
                 debugEV<< "The set of TX packets is empty! Nothing to save!" <<endl;
             }
+
+            //beaconMsgs.clear();
 
             break;
         }
@@ -1179,7 +1240,7 @@ void OBUapp::updateBeaconsList(cBeaconsList &myList, simtime_t time){;
 /*\Ion*/
 
 
-/*Ion: a method to elect the leader*/
+/*Ion: a method to elect as leader the nearest vehicle to distance D from sender*/
 bool OBUapp::electedLeader(Beacons sender, WsmExt* ext){
     cBeaconsList::iterator it;
     double counter = 0.0;
@@ -1248,6 +1309,185 @@ bool OBUapp::electedLeader(Beacons sender, WsmExt* ext){
         }
     }
 }
+/*\Ion*/
+
+
+/*Ion: a method to elect the leader using also road weight information besides the distance D from sender*/
+/*bool OBUapp::electedLeader(Beacons sender, WsmExt* ext){
+    cBeaconsList::iterator itb;
+    Beacons myself;
+    alreadyParticipated = true;
+    cBeaconsList tempList;
+    std::list<vehRoadPair> vehRoadList;     // a list containing element of type <Beacon, Weight>: this means that each vehicle has assigned a weight according to the weight of the road segment on which it is at this moment
+    std::list<vehRoadPair>::iterator iter;
+    std::list<vehCounterPair> vehCounterList;
+
+    if (beaconMsgs.empty()){
+        debugEV<< "I HAVE NO NEIGHBORS!!!" <<endl;
+        return false;
+    }
+
+    for (itb=beaconMsgs.begin(); itb!=beaconMsgs.end(); itb++){     // find myself in the beacons list and save my information
+        if (itb->senderAddress==myId) myself = *itb;
+    }
+
+    Coord myPos = new Coord(myself.senderPositionX, myself.senderPositionY);
+    Coord senderPos = new Coord(ext->getSenderPos().x, ext->getSenderPos().y);
+    double myDist = myPos.distance(senderPos);
+
+    debugEV<< "Myself = " << myself.senderAddress <<endl;
+    debugEV<< "x = " << myself.senderPositionX <<endl;
+    debugEV<< "y = " << myself.senderPositionY <<endl;
+    debugEV<< "My Pos = " << myPos <<endl;
+    debugEV<< "Sender Pos = " << senderPos <<endl;
+    debugEV<< "My Dist from sender = " << myDist <<endl;
+
+    if ((myDist >= defaultDistance - defaultDistance/2) && (myDist <= defaultDistance + defaultDistance/2)){    // check if my distance from the sender is between D-D/2 and D+D/2
+        //tempList.push_back(myself);     // if the previous condition is true, add myself to the tempList, which is a list containing only those neighbors residing between D-D/2 and D+D/2
+        for (itb=beaconMsgs.begin(); itb!=beaconMsgs.end(); itb++){
+            if (collinear(sender.senderPositionX, sender.senderPositionY, itb->senderPositionX, itb->senderPositionY, myself.senderPositionX, myself.senderPositionY)){ // check only those neighbors residing on the same road with me
+                if (distanceOK(myself.senderPositionX, myself.senderPositionY, itb->senderPositionX, itb->senderPositionY)){    // check only for those neighbors residing not farther than D+D/2 from me
+                    Coord neighborPos = new Coord(itb->senderPositionX, itb->senderPositionY);
+                    double nDist = neighborPos.distance(senderPos);
+                    if ((nDist >= defaultDistance - defaultDistance/2) && (nDist <= defaultDistance + defaultDistance/2)){  // check if may neighbor's distance is between D-D/2 and D+D/2
+                        tempList.push_back(*itb);   // if the previous condition is true, add my neighbor to tempList
+                    }
+                }
+            }
+        }
+    }
+    else{   // if my distance from the sender is not between D-D/2 and D+D/2 then I decide to not be the leader
+        return false;
+    }
+
+    if (!tempList.empty()){     // check if there is at least one vehicle in the area between D-D/2 and D+D/2
+        debugEV<< "My neighbors inside D-D/2 and D+D/2" <<endl;
+        for (itb=tempList.begin(); itb!=tempList.end(); itb++){
+            debugEV<< itb->senderAddress <<endl;
+        }
+        for (itb=tempList.begin(); itb!=tempList.end(); itb++){         // for each vehicle in tempList assign a weight
+            vehRoadList.push_back(vehRoadPair(*itb, getRoadSegWeight(*itb)));
+        }
+
+        std::map<double, cBeaconsList> weightBeaconMap;     // a map where the key is given by the weight and the value is given by a list of vehicles having this weight
+        for (iter=vehRoadList.begin(); iter!=vehRoadList.end(); iter++){    // iterate over all the vehicles in the vehRoadList
+            std::map<double, cBeaconsList>::iterator elem = weightBeaconMap.find(iter->second);     // find the weight in the map
+            if (elem != weightBeaconMap.end()){     // if there is already such key in the map, then update the map
+                debugEV<< "The key " << elem->first << " was already in the map! Updating the value!" <<endl;
+                elem->second.push_back(iter->first);
+            }
+            else{   // if there is no such key in the map, create a new cBeaconsList and add the current element
+                debugEV<< "The key " << iter->second << " was not in the map! Created a new entry having this key!" <<endl;
+                cBeaconsList newList;
+                newList.push_back(iter->first);
+                weightBeaconMap[iter->second] = newList;
+            }
+        }
+
+        std::map<double, cBeaconsList>::iterator mapIter;
+        for (mapIter=weightBeaconMap.begin(); mapIter!=weightBeaconMap.end(); mapIter++){   // for all entries in the map, sort the beacons lists by their distance from the distance D
+            debugEV<< "Key = " << mapIter->first <<endl;
+            sortListByDistance(mapIter->second, sender);
+        }
+
+        std::map<double, cBeaconsList>::reverse_iterator revIter;
+        int counter = 0;
+        for (revIter=weightBeaconMap.rbegin(); revIter!=weightBeaconMap.rend(); revIter++){
+            for (itb=revIter->second.begin(); itb!=revIter->second.end(); itb++){
+                vehCounterList.push_back(vehCounterPair(*itb, counter++));
+            }
+        }
+
+        debugEV<< "Final sorted list with counters:" <<endl;
+        std::list<vehCounterPair>::iterator countIter;
+        for (countIter=vehCounterList.begin(); countIter!=vehCounterList.end(); countIter++){
+            debugEV<< "Veh = " << countIter->first.senderAddress << " : Counter = " << countIter->second <<endl;
+        }
+    }
+
+    else{   // if there is no vehicle in the area between D-D/2 and D+D/2, including me, then I decide to not be the leader
+        debugEV<< "No vehicle inside D-D/2 and D+D/2" <<endl;
+        return false;
+    }
+
+    if (vehCounterList.front().first.senderAddress == myself.senderAddress){    // i was elected as leader
+        return true;
+    }
+    else{
+        debugEV<< "Setting backup timer..." <<endl;
+        std::list<vehCounterPair>::iterator countIter;
+        for (countIter=vehCounterList.begin(); countIter!=vehCounterList.end(); countIter++){
+            if (countIter->first.senderAddress == myself.senderAddress){
+                if ( ext->getTtl() > 1 ) {
+                    std::stringstream ss;
+                    ss << "sendBeacon_evt_node" << myId << "_sNum" << ext->getSeqNum();
+                    std::string name(ss.str());
+                    sendBeacon->setName(name.c_str());
+                    sendBeacon->setKind(PERMISSION_TO_SEND);
+                    setIdTimer(sendBeacon->getId(),ext);
+                    debugEV<< "COUNTER = " << countIter->second <<endl;
+                    double temp_delay = countIter->second*delayTimerType1+0.002;
+                    if (temp_delay < 100000){                           // if it's 100000, then it didn't pass a test
+                        debugEV << ">>>>>>>>>>>>>>>> Scheduled delay (s): " << temp_delay <<endl;
+                        scheduleAt(simTime()+temp_delay, sendBeacon);                   // schedules selfMessage (duplicate of ext) after delay
+                    } else {
+                        debugEV << ">>>>>>>>>>>>>>>> Delay not scheduled!" <<endl;
+                    }
+                } else {
+                    debugEV << "Max hops reached (ttl = "<< ext->getTtl() <<") -> delete message" <<endl;
+                }
+                break;
+            }
+        }
+        return false;
+    }
+}
+
+double OBUapp::getRoadSegWeight(Beacons veh){   // a method that checks for a given vehicle which is the road segment on which it travels and returns the weight of this road segment
+    double result = -1.0;
+    double minDist = R;
+    roadSegmentList::iterator it;
+    Coord vehPos = new Coord(veh.senderPositionX, veh.senderPositionY);
+    for (it = roadSegments.begin(); it != roadSegments.end(); it++) {
+        Coord roadPos = new Coord(it->roadPosX, it->roadPosY);
+        double dist = vehPos.distance(roadPos);
+        if (dist < minDist){
+            minDist = dist;
+            result = it->roadWeight;
+        }
+    }
+    return result;
+}
+
+void OBUapp::sortListByDistance(cBeaconsList& beaconsList, Beacons sender){
+    debugEV<< "Sorting the list by distance from D..." <<endl;
+    std::vector<myPair> neighborsList;
+    cBeaconsList::iterator it;
+
+    for (it=beaconsList.begin(); it!=beaconsList.end(); it++){  // create a list of pairs containing a beacon as the first element and the distance as the second element
+        double tempDist = abs(sqrt( pow((sender.senderPositionX - it->senderPositionX),2) + pow((sender.senderPositionY - it->senderPositionY),2))-defaultDistance);
+        neighborsList.push_back(myPair(*it,tempDist));
+    }
+
+    std::sort(neighborsList.begin(), neighborsList.end(), sortVector());    // sort the neighbors list by distance;
+
+    std::vector<myPair>::iterator iter;
+    for (iter=neighborsList.begin(); iter!=neighborsList.end(); iter++){
+        debugEV<< "Veh = " << iter->first.senderAddress << ": Dist = " << iter->second <<endl;
+        for (it=beaconsList.begin(); it!=beaconsList.end(); it++){
+            if (it->senderAddress == iter->first.senderAddress){
+                beaconsList.erase(it);
+                break;
+            }
+        }
+        beaconsList.push_back(iter->first);
+    }
+
+    debugEV<< "Sorted list of vehicles:" <<endl;
+    for (it=beaconsList.begin(); it!=beaconsList.end(); it++){
+        debugEV<< it->senderAddress <<endl;
+    }
+}*/
 /*\Ion*/
 
 
@@ -1331,7 +1571,6 @@ void OBUapp::saveRequestPacket(int parentNode, int requestNode, simtime_t actual
 
 /*Ion*/
 void OBUapp::saveNeighborToList(int node, WsmExt* ext){
-    debugEV<< "Inside saving method!!!" <<endl;
     ofstream myfile;
     string path = this->path+"neighbors/";
     ostringstream ss;
@@ -1517,7 +1756,13 @@ int OBUapp::getDefaultDistance(){
     int result = 0;
     ifstream myfile;
     string line;
-    string filename = "/home/pierpaolo/Scrivania/Ion_Results/Script/D.txt";
+    /*string filename;
+    if (sim_name=="Newyork1") filename = "/home/pierpaolo/Scrivania/Ion_Results/Script/D1.txt";
+    if (sim_name=="Newyork2") filename = "/home/pierpaolo/Scrivania/Ion_Results/Script/D2.txt";
+    if (sim_name=="Newyork3") filename = "/home/pierpaolo/Scrivania/Ion_Results/Script/D3.txt";
+    if (sim_name=="Newyork4") filename = "/home/pierpaolo/Scrivania/Ion_Results/Script/D4.txt";
+    if (sim_name=="Newyork5") filename = "/home/pierpaolo/Scrivania/Ion_Results/Script/D5.txt";*/
+    string filename = this->path+"D.txt";
     myfile.open(filename.c_str());
     if (myfile.is_open())
       {
@@ -1538,7 +1783,7 @@ int OBUapp::getDefaultTTL(){
     int result = 0;
     ifstream myfile;
     string line;
-    string filename = "/home/pierpaolo/Scrivania/Ion_Results/Script/TTL.txt";
+    string filename = this->path+"TTL.txt";
     myfile.open(filename.c_str());
     if (myfile.is_open())
       {
@@ -1551,6 +1796,31 @@ int OBUapp::getDefaultTTL(){
     else debugEV<< "ERROR! CANNOT OPEN THE FILE!" <<endl;
     return result;
 }
+/*\Ion*/
+
+
+/*Ion*/
+/*void OBUapp::readListFromFile(){
+    ifstream myfile;
+    string line;
+    string filename = "/home/pierpaolo/Scrivania/Ion_Results/Script/WNSTD";
+    myfile.open(filename.c_str());
+    if (myfile.is_open())
+      {
+        while ( getline (myfile,line) )
+        {
+            string buf; // Have a buffer string
+            stringstream ss(line); // Insert the string into a stream
+            vector<string> tokens; // Create vector to hold our words
+            while (ss >> buf){
+                tokens.push_back(buf);
+            }
+            roadSegments.push_back(RoadSegment(strtoul(tokens[0].c_str(), NULL, 0), strtod(tokens[1].c_str(), NULL), strtod(tokens[2].c_str(), NULL), strtod(tokens[3].c_str(), NULL)));
+        }
+        myfile.close();
+      }
+    else debugEV<< "ERROR! CANNOT OPEN THE FILE!" <<endl;
+}*/
 /*\Ion*/
 
 

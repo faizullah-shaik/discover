@@ -53,12 +53,13 @@ void RSUbcast::initialize(int stage) {
         }*/
 
         sim_name = ev.getConfigEx()->getActiveConfigName();
-        if (sim_name=="Managrid") path="/home/pierpaolo/Scrivania/Ion_Results/";
+        path = "/home/ion/Desktop/DISCOVER_Results/";
+        /*if (sim_name=="Managrid") path="/home/pierpaolo/Scrivania/Ion_Results/";
         if (sim_name=="Newyork1") path="/home/ion/Desktop/";
         if (sim_name=="Newyork2") path="/media/HD2/Ion_Backup/DISCOVER_DOWNLOAD/Newyork/Newyork2/StartBeacon300/";
         if (sim_name=="Newyork3") path="/media/HD2/Ion_Backup/DISCOVER_DOWNLOAD/Newyork/Newyork3/StartBeacon300/";
         if (sim_name=="Newyork4") path="/media/HD2/Ion_Backup/DISCOVER_DOWNLOAD/Newyork/Newyork4/StartBeacon300/";
-        if (sim_name=="Newyork5") path="/media/HD2/Ion_Backup/DISCOVER_DOWNLOAD/Newyork/Newyork5/StartBeacon300/";
+        if (sim_name=="Newyork5") path="/media/HD2/Ion_Backup/DISCOVER_DOWNLOAD/Newyork/Newyork5/StartBeacon300/";*/
 
    /*     if (sim_name=="Roma1") path="/media/HD2/Ion_Backup/FLOODING/Roma/Roma1/StartBeacon300/";
         if (sim_name=="Roma2") path="/media/HD2/Ion_Backup/FLOODING/Roma/Roma2/StartBeacon300/";
@@ -245,7 +246,7 @@ int RSUbcast::getDefaultTTL(){
     int result = 0;
     ifstream myfile;
     string line;
-    string filename = "/home/pierpaolo/Scrivania/Ion_Results/Script/TTL.txt";
+    string filename = this->path+"TTL.txt";
     myfile.open(filename.c_str());
     if (myfile.is_open())
       {
